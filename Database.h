@@ -1,7 +1,4 @@
-
-#ifndef __DATABASE_H__
-#define __DATABASE_H__
-
+#pragma once 
 #include <string>
 #include <vector>
 #include "sqlite3.h"
@@ -19,5 +16,3 @@ public:
 private:
 	sqlite3 *database;
 };
-
-#endif

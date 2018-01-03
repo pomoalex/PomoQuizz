@@ -9,5 +9,9 @@
 #include <netdb.h>
 #include <string.h>
 #include <arpa/inet.h>
-#define PORT 3210
-#define SERVER_IP "192.168.1.38"
+#include <chrono>
+#include <math.h>
+#define PORT 4321
+#define SERVER_IP "127.0.0.1"
+
+using namespace std;

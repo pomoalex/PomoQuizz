@@ -26,7 +26,7 @@ int main()
 		perror("error at bind().\n");
 		return errno;
 	}
-	if (listen(server_sd, 3) == -1)
+	if (listen(server_sd, 1) == -1)
 	{
 		perror("error at listen().\n");
 		return errno;
@@ -35,11 +35,26 @@ int main()
 	int nr_client = 0;
 	int client;
 	socklen_t length = sizeof(from);
+	//
+	auto start = chrono::high_resolution_clock::now();
+	int last = 0;
+	//
 	while (1)
 	{
 		fflush(stdout);
 		client = accept(server_sd, (struct sockaddr *)&from, &length);
 		nr_client++;
+
+		//
+		auto finish = chrono::high_resolution_clock::now();
+		chrono::duration<double> elapsed = finish - start;
+		if (floor(elapsed.count()) != last)
+		{
+			printf("%d\n", (int)elapsed.count());
+			last = floor(elapsed.count());
+		}
+		//
+
 		if (client < 0)
 		{
 			perror("error at accept().\n");
