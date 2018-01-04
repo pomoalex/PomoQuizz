@@ -42,7 +42,7 @@ int main()
 		'Pail of Water','Ice Cream','Baseball','Dog Bone',1);");
 	database->query("INSERT INTO Questions VALUES(\
 		'A task that is a low priority is usually put on what ?',\
-		'Back Burner','Couch','Top Bunker','Staircase',1);");
+		'Back Burner','Couch','Top Bunker','Staircase',1);");//10 questions
 	database->query("INSERT INTO Questions VALUES(\
 		'At which restaurant would you be able to order Chicken McNuggets ?',\
 		'McDonald`s','Burger King','Wendy`s','Taco Bell',1);");
@@ -72,7 +72,7 @@ int main()
 		'King','Queen','Rook','Bishop',1);");
 	database->query("INSERT INTO Questions VALUES(\
 		'Bacon is cuts of meat taken from what animal ?',\
-		'Pig','Cow','Deer','Rabbit',1);");
+		'Pig','Cow','Deer','Rabbit',1);");//20 questions
 	database->query("INSERT INTO Questions VALUES(\
 		'Which soft drink occasionally features polar bears in advertisments ?',\
 		'Coca-Cola','Sprite','Dr.Pepper','Mountain Dew',1);");
@@ -85,6 +85,24 @@ int main()
 	database->query("INSERT INTO Questions VALUES(\
 		'What kind of factory does Willy Wonka own ?',\
 		'Chocolate','Toy','Ice Cream','Software',1);");
+	database->query("INSERT INTO Questions VALUES(\
+		'The fictional character Chewbacca appears in which films ?',\
+		'Star Wars','Harry Potter','Lord of the Rings','Star Trek',1);");
+	database->query("INSERT INTO Questions VALUES(\
+		'What is the name of Dorothy`s dog in the \"The Wizard of Oz\" ?',\
+		'Toto','Benji','Rin Tin Tin','Lassie',1);");
+	database->query("INSERT INTO Questions VALUES(\
+		'What subatomic particle carries a negative electric charge ?',\
+		'Electron','Neutron','Isotope','Proton',1);");
+	database->query("INSERT INTO Questions VALUES(\
+		'What is Batman`s real name ?',\
+		'Bruce Wayne','Peter Parker','Clark Kent','David Bowie',1);");
+	database->query("INSERT INTO Questions VALUES(\
+		'Of the following superheroes who does not wear a cape ?',\
+		'Spider-Man','Batman','Robin','Superman',1);");
+	database->query("INSERT INTO Questions VALUES(\
+		'Which of the followwing is not a root vegetable ?',\
+		'Zucchini','Carrot','Radish','',1);");//30 questions
 	database->close();
 	return 0;
 }

@@ -1,14 +1,14 @@
 COMPILER=g++
 
-all: server client
+all: Server Client Database.sqlite
 
-server: Server.cpp
+Server: Server.cpp
 	$(COMPILER) Server.cpp -o Server 
 
-client: Client.cpp
+Client: Client.cpp
 	$(COMPILER) Client.cpp -o Client
 
-database: Database.cpp CreateDatabase.cpp 
+Database.sqlite: Database.cpp CreateDatabase.cpp 
 	$(COMPILER) Database.cpp CreateDatabase.cpp -lsqlite3 -o CreateDatabase
 	./CreateDatabase
 
