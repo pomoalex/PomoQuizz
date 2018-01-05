@@ -2,8 +2,8 @@ COMPILER=g++
 
 all: Server Client Database.sqlite
 
-Server: new_serv.cpp
-	$(COMPILER) new_serv.cpp -o Server -pthread
+Server: Server.cpp Player.cpp
+	$(COMPILER) Server.cpp Player.cpp -o Server -pthread 
 
 Client: Client.cpp
 	$(COMPILER) Client.cpp -o Client
