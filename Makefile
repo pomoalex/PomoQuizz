@@ -2,8 +2,8 @@ COMPILER=g++
 
 all: Server Client Database.sqlite
 
-Server: Server.cpp
-	$(COMPILER) Server.cpp -o Server 
+Server: new_serv.cpp
+	$(COMPILER) new_serv.cpp -o Server -pthread
 
 Client: Client.cpp
 	$(COMPILER) Client.cpp -o Client
@@ -13,4 +13,4 @@ Database.sqlite: Database.cpp CreateDatabase.cpp
 	./CreateDatabase
 
 clean:
-	rm Server Client
+	rm Server Client 

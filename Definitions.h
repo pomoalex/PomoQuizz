@@ -11,6 +11,9 @@
 #include <arpa/inet.h>
 #include <chrono>
 #include <math.h>
+#include <signal.h>
+#include <pthread.h>
+#include <thread>
 #define PORT 4321
 #define SERVER_IP "127.0.0.1"
 
