@@ -1,7 +1,6 @@
 #include "Definitions.h"
 #include "Player.h"
 #include <vector>
-#include <mutex>
 #define WAITING_TIME 30
 mutex locker;
 extern int errno;
