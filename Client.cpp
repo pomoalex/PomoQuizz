@@ -2,7 +2,8 @@
 #include <SFML/Graphics.hpp>
 #define TITLE "PomoQuizz"
 #define BACKGROUND "background.jpg"
-#define LOGO_FONT "FFF_Tusj.ttf"
+#define ALTERNATIVE_FONT "FFF_Tusj.ttf"
+#define FONT "OpenSans-Regular.ttf"
 #define LOGO "PomoQuizz"
 
 enum class STATE
@@ -16,7 +17,7 @@ enum class STATE
 STATE game_state;
 mutex locker;
 sf::Sprite background;
-sf::Font logo_font;
+sf::Font font;
 sf::Texture temp_texture;
 int WindowWidth, WindowHeight;
 string username;
@@ -78,7 +79,7 @@ void InitWindow(sf::RenderWindow &window)
 	}
 	background.setTexture(temp_texture);
 	background.setScale(WindowWidth / background.getLocalBounds().width, WindowHeight / background.getLocalBounds().height);
-	if (!logo_font.loadFromFile(LOGO_FONT))
+	if (!font.loadFromFile(FONT))
 	{
 		perror("Cannot load font !");
 		exit(errno);
@@ -107,7 +108,7 @@ void Intro(sf::RenderWindow &window)
 void DrawIntro(sf::RenderWindow &window)
 {
 	sf::Text text;
-	text.setFont(logo_font);
+	text.setFont(font);
 	text.setString(LOGO);
 	text.setCharacterSize(WindowHeight * 0.25);
 	text.setFillColor(sf::Color::Red);
@@ -136,15 +137,15 @@ void ManageLogin(sf::RenderWindow &window)
 	sf::Text login_text;
 	username = "username";
 	login_text.setString("Login");
-	login_text.setFont(logo_font);
-	login_text.setCharacterSize(WindowHeight * 0.1);
+	login_text.setFont(font);
+	login_text.setCharacterSize(WindowHeight * 0.15);
 	login_text.setFillColor(sf::Color::Red);
 	login_text.setStyle(sf::Text::Bold);
 	login_text.setPosition((WindowWidth - login_text.getGlobalBounds().width) / 2,
 						   (WindowHeight - login_text.getGlobalBounds().height) * 0.3);
 	sf::Text username_text;
-	username_text.setFont(logo_font);
-	username_text.setString(username);
+	username_text.setFont(font);
+	username_text.setString("ppppdddd");
 	username_text.setCharacterSize(WindowHeight * 0.08);
 	username_text.setFillColor(sf::Color::Red);
 	int usr_text_height = (login_text.getPosition().y + login_text.getGlobalBounds().height +
@@ -153,10 +154,12 @@ void ManageLogin(sf::RenderWindow &window)
 							   0.25);
 	username_text.setPosition((WindowWidth - username_text.getGlobalBounds().width) / 2, usr_text_height);
 	sf::RectangleShape textbox;
-	textbox.setSize(sf::Vector2f(username_text.getGlobalBounds().width * 1.6, username_text.getGlobalBounds().height * 1.5));
+	textbox.setSize(sf::Vector2f(WindowWidth * 0.4, username_text.getGlobalBounds().height * 1.2));
 	textbox.setFillColor(sf::Color::Transparent);
-	textbox.setOutlineThickness(5);
-	textbox.setPosition((WindowWidth - textbox.getGlobalBounds().width) / 2, usr_text_height + username_text.getGlobalBounds().height * 0.3);
+	textbox.setOutlineThickness(2);
+	textbox.setPosition((WindowWidth - textbox.getGlobalBounds().width) / 2,
+						username_text.getPosition().y - (username_text.getGlobalBounds().height - textbox.getGlobalBounds().height) / 4);
+	username_text.setString("username");
 	sf::Event event;
 	while (window.isOpen() && game_state == STATE::LOGIN)
 	{
@@ -187,7 +190,7 @@ void ManageLogin(sf::RenderWindow &window)
 					game_state = STATE::CONNECTING;
 				username_text.setString(username);
 				username_text.setPosition((WindowWidth - username_text.getGlobalBounds().width) / 2, usr_text_height);
-				if (textbox.getGlobalBounds().width * 0.95 <= username_text.getGlobalBounds().width)
+				if (textbox.getGlobalBounds().width * 0.9 <= username_text.getGlobalBounds().width)
 				{
 					username = username.substr(0, username.length() - 1);
 					username_text.setString(username);
@@ -248,7 +251,7 @@ void DrawConnection(sf::RenderWindow &window, int &option)
 	string text_str = "Connecting to server ";
 	int text_len = text_str.length();
 	int init_option = 0;
-	text.setFont(logo_font);
+	text.setFont(font);
 	text.setString(text_str);
 	text.setCharacterSize(WindowHeight * 0.10);
 	text.setFillColor(sf::Color::Red);
@@ -346,17 +349,17 @@ void PomoQuizz(sf::RenderWindow &window)
 	sf::Text question;
 	sf::Text answers[4];
 	sf::Text aux;
-	question.setFont(logo_font);
+	question.setFont(font);
 	question.setFillColor(sf::Color::Red);
 	question.setStyle(sf::Text::Bold);
-	aux.setFont(logo_font);
+	aux.setFont(font);
 	aux.setFillColor(sf::Color::Red);
 	aux.setStyle(sf::Text::Bold);
 	question.setCharacterSize(WindowHeight * 0.06);
 	aux.setCharacterSize(WindowHeight * 0.06);
 	for (int index = 0; index < 4; index++)
 	{
-		answers[index].setFont(logo_font);
+		answers[index].setFont(font);
 		answers[index].setFillColor(sf::Color::Red);
 		answers[index].setCharacterSize(WindowHeight * 0.06);
 	}

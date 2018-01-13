@@ -21,18 +21,31 @@
 
 using namespace std;
 
-int send_to(int file_descriptor, char *message)
+int send_to(int file_descriptor, void *message, int size = -1)
 {
 	int result;
-	result = write(file_descriptor, message, strlen(message));
-	if (result <= 0)
-		return result;
+	if (size == -1)
+		{
+			size = strlen((char *)message);
+			send_to(file_descriptor,&size,sizeof(int));
+		}
+	result = write(file_descriptor, message, size);
+	return result;
 }
 
-int recv_from(int file_descriptor, char *message)
+int read_from(int file_descriptor, void *data, int size)
 {
 	int result;
-	result = read(file_descriptor, message, 256);
+	result = read(file_descriptor, data, size);
+	return result;
+}
+
+int recv_from(int file_descriptor, char *message,int size = -1)
+{
+	int result;
+	if(size == -1)
+		read_from(file_descriptor,&size,sizeof(int));
+	result = read(file_descriptor, message, size);
 	if (result > 0)
 		if (message[result - 1] == '\n')
 			message[result - 1] = '\0';

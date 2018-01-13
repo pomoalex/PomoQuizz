@@ -2,7 +2,7 @@
 #include "Player.h"
 #include "Quizz.h"
 #include <vector>
-#define WAITING_TIME 15
+#define WAITING_TIME 1
 mutex locker;
 extern int errno;
 
@@ -123,40 +123,18 @@ void PlayPomoQuizz(Quizz &new_quizz, Player player)
 {
 	Quizz quizz = new_quizz;
 	vector<string> question;
+	int length;
 	for (int index = 0; index < 10; index++)
 	{
-		char temp[256];
+		char temp[300];
 		quizz.GetQuestion(index, question);
-		sprintf(temp, "%s\n", (char *)question[0].c_str());
-		if (!send_to(player.socket_descriptor, temp))
-		{
-			printf("Client exited unexpectedly .\n");
-			break;
-		}
-		sprintf(temp, "%s\n", (char *)question[1].c_str());
-		if (!send_to(player.socket_descriptor, temp))
-		{
-			printf("Client exited unexpectedly .\n");
-			break;
-		}
-		sprintf(temp, "%s\n", (char *)question[2].c_str());
-		if (!send_to(player.socket_descriptor, temp))
-		{
-			printf("Client exited unexpectedly .\n");
-			break;
-		}
-		sprintf(temp, "%s\n", (char *)question[3].c_str());
-		if (!send_to(player.socket_descriptor, temp))
-		{
-			printf("Client exited unexpectedly .\n");
-			break;
-		}
-		sprintf(temp, "%s\n", (char *)question[4].c_str());
-		if (!send_to(player.socket_descriptor, temp))
-		{
-			printf("Client exited unexpectedly .\n");
-			break;
-		}
+		sprintf(temp, "%s\n%s\n%s\n%s\n%s\n",
+				(char *)question[0].c_str(),
+				(char *)question[1].c_str(),
+				(char *)question[2].c_str(),
+				(char *)question[3].c_str(),
+				(char *)question[4].c_str());
+		send_to(player.socket_descriptor,temp);
 		/*if (!recv_from(player.socket_descriptor, temp))
 		{
 			printf("Client exited unexpectedly .\n");
