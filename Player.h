@@ -8,6 +8,7 @@ class Player
 	Player();
 	~Player();
 	string username;
+	int score = 0;
 	int socket_descriptor;
   private:
 };

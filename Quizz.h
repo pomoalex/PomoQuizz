@@ -18,6 +18,10 @@ public:
 	~Quizz();
 	void Reinitialize();
 	void PrintQuestions();
+	void GetQuestion(int question_nr , vector<string> &result);
 private:
+	bool concluded = false;
+	string winner;
+	int score;
 	vector<Question> questions;
 };

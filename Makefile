@@ -2,14 +2,23 @@ COMPILER=g++
 
 all: Server Client Database.sqlite
 
-Server: Server.cpp Player.cpp Player.h Definitions.h
-	$(COMPILER) Server.cpp Player.cpp -o Server -pthread 
+Server: Server.cpp Quizz.o Definitions.h
+	$(COMPILER) Server.cpp Player.o Quizz.o Database.o -o Server -pthread -lsqlite3
+
+Player.o: Player.cpp Player.h
+	$(COMPILER) Player.cpp -c 
+
+Quizz.o: Quizz.cpp Quizz.h Database.o 
+	$(COMPILER) Quizz.cpp Database.o -c 
+
+Database.o: Database.h Database.cpp 
+	$(COMPILER) Database.cpp -c 
 
 Client: Client.cpp Definitions.h
-	$(COMPILER) Client.cpp -o Client -lsfml-graphics -lsfml-window -lsfml-system
+	$(COMPILER) Client.cpp -o Client -lsfml-graphics -lsfml-window -lsfml-system -pthread
 
-Database.sqlite: Database.cpp CreateDatabase.cpp Database.h
-	$(COMPILER) Database.cpp CreateDatabase.cpp -lsqlite3 -o CreateDatabase
+Database.sqlite: Database.o CreateDatabase.cpp Database.h
+	$(COMPILER) Database.o CreateDatabase.cpp -lsqlite3 -o CreateDatabase
 	./CreateDatabase
 
 clean:

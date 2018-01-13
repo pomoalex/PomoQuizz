@@ -52,3 +52,17 @@ void Quizz::PrintQuestions()
 			   (temp.answers[1]).c_str(), (temp.answers[2]).c_str(), (temp.answers[3]).c_str(), temp.correct_answer);
 	}
 }
+
+void Quizz::GetQuestion(int question_nr , vector<string> &result)
+{
+	auto temp = questions[question_nr];
+	result.clear();
+	result.push_back(temp.question);
+	result.push_back(temp.answers[0]);
+	result.push_back(temp.answers[1]);
+	result.push_back(temp.answers[2]);
+	result.push_back(temp.answers[3]);
+	char auxiliary [1];
+	sprintf(auxiliary,"%d",temp.correct_answer);
+	result.push_back(auxiliary);
+}

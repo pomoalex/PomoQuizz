@@ -1,58 +1,18 @@
 #include "Definitions.h"
 #include "Player.h"
+#include "Quizz.h"
 #include <vector>
-#define WAITING_TIME 30
+#define WAITING_TIME 2
 mutex locker;
 extern int errno;
 
-void close_socket(int *socket_descriptor, chrono::high_resolution_clock::time_point start, int seconds)
-{
-	chrono::high_resolution_clock::time_point finish;
-	while (1)
-	{
-		finish = chrono::high_resolution_clock::now();
-		chrono::duration<double> elapsed = finish - start;
-		if (elapsed.count() > seconds)
-		{
-			shutdown(*socket_descriptor, SHUT_RDWR);
-			close(*socket_descriptor);
-			break;
-		}
-	}
-}
+void close_socket(int *socket_descriptor, chrono::high_resolution_clock::time_point start, int seconds);
 
-void login_attempt(vector<Player> &players, int socket_descriptor, chrono::high_resolution_clock::time_point start)
-{
-	char username[256];
-	if (recv_from(socket_descriptor, username))
-	{
-		Player new_player;
-		new_player.username = username;
-		new_player.socket_descriptor = socket_descriptor;
-		locker.lock();
-		players.push_back(new_player);
-		locker.unlock();
-		char message[256];
-		auto current_time = chrono::high_resolution_clock::now();
-		chrono::duration<double> elapsed = current_time - start;
-		sprintf(message, "Game starts in %d second !\n", (WAITING_TIME - (int)floor(elapsed.count())));
-		send_to(socket_descriptor, message);
-	}
-	else
-		close(socket_descriptor);
-}
+void login_attempt(vector<Player> &players, int socket_descriptor, chrono::high_resolution_clock::time_point start);
 
-void PomoQuizz(vector<Player> players)
-{
-	char message[256];
-	sprintf(message,"Game has started !\n");
-	for (auto iterator = players.begin(); iterator != players.end(); iterator++)
-	{
-		send_to(iterator->socket_descriptor, message);
-	}
-	while (1)
-		;
-}
+void PomoQuizz(vector<Player> players);
+
+void PlayPomoQuizz(Quizz &quizz, Player player);
 
 int main()
 {
@@ -94,15 +54,115 @@ int main()
 		auto start = chrono::high_resolution_clock::now();
 		thread terminate_accept(close_socket, &server_sd, start, WAITING_TIME);
 		terminate_accept.detach();
-		while ((client_sd = accept(server_sd, (struct sockaddr *)&client, &length)) > 0)
+		do
 		{
-			nr_client++;
-			printf("Client %d just connected in room %d !\n", nr_client, room);
-			thread login(login_attempt, ref(players), client_sd, start);
-			login.join();
-		}
+			while ((client_sd = accept(server_sd, (struct sockaddr *)&client, &length)) >= 0)
+			{
+				nr_client++;
+				printf("Client %d just connected in room %d !\n", nr_client, room);
+				thread login(login_attempt, ref(players), client_sd, start);
+				login.join();
+			}
 		thread match(PomoQuizz, players);
 		match.detach();
 		players.clear();
+	}
+}
+
+void close_socket(int *socket_descriptor, chrono::high_resolution_clock::time_point start, int seconds)
+{
+	chrono::high_resolution_clock::time_point finish;
+	while (1)
+	{
+		finish = chrono::high_resolution_clock::now();
+		chrono::duration<double> elapsed = finish - start;
+		if (elapsed.count() > seconds)
+		{
+			shutdown(*socket_descriptor, SHUT_RDWR);
+			close(*socket_descriptor);
+			printf("aici intra\n");
+			break;
+		}
+	}
+}
+
+void login_attempt(vector<Player> &players, int socket_descriptor, chrono::high_resolution_clock::time_point start)
+{
+	char username[256];
+	if (recv_from(socket_descriptor, username) > 0)
+	{
+		Player new_player;
+		new_player.username = username;
+		new_player.socket_descriptor = socket_descriptor;
+		locker.lock();
+		players.push_back(new_player);
+		locker.unlock();
+		char message[256];
+		auto current_time = chrono::high_resolution_clock::now();
+		chrono::duration<double> elapsed = current_time - start;
+		sprintf(message, "%d\n", (WAITING_TIME - (int)floor(elapsed.count())));
+		send_to(socket_descriptor, message);
+	}
+	else
+	{
+		shutdown(socket_descriptor, SHUT_RDWR);
+		close(socket_descriptor);
+	}
+}
+
+void PomoQuizz(vector<Player> players)
+{
+	Quizz quizz;
+	thread execute;
+	for (auto iterator = players.begin(); iterator != players.end(); iterator++)
+	{
+		execute = thread(PlayPomoQuizz, ref(quizz), *iterator);
+		execute.detach();
+	}
+}
+
+void PlayPomoQuizz(Quizz &new_quizz, Player player)
+{
+	Quizz quizz = new_quizz;
+	vector<string> question;
+	for (int index = 0; index < 10; index++)
+	{
+		char temp[256];
+		quizz.GetQuestion(index, question);
+		sprintf(temp, "%s\n", (char *)question[0].c_str());
+		if (!send_to(player.socket_descriptor, temp))
+		{
+			printf("Client exited unexpectedly .\n");
+			break;
+		}
+		sprintf(temp, "%s\n", (char *)question[1].c_str());
+		if (!send_to(player.socket_descriptor, temp))
+		{
+			printf("Client exited unexpectedly .\n");
+			break;
+		}
+		sprintf(temp, "%s\n", (char *)question[2].c_str());
+		if (!send_to(player.socket_descriptor, temp))
+		{
+			printf("Client exited unexpectedly .\n");
+			break;
+		}
+		sprintf(temp, "%s\n", (char *)question[3].c_str());
+		if (!send_to(player.socket_descriptor, temp))
+		{
+			printf("Client exited unexpectedly .\n");
+			break;
+		}
+		sprintf(temp, "%s\n", (char *)question[4].c_str());
+		if (!send_to(player.socket_descriptor, temp))
+		{
+			printf("Client exited unexpectedly .\n");
+			break;
+		}
+		/*if (!recv_from(player.socket_descriptor, temp))
+		{
+			printf("Client exited unexpectedly .\n");
+			break;
+		}*/
 	}
 }

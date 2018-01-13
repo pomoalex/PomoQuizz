@@ -17,6 +17,7 @@
 #include <mutex>
 #define PORT 4321
 #define SERVER_IP "127.0.0.1"
+#define TIME_PER_ANSWER 30
 
 using namespace std;
 
@@ -24,7 +25,8 @@ int send_to(int file_descriptor, char *message)
 {
 	int result;
 	result = write(file_descriptor, message, strlen(message));
-	return result;
+	if (result <= 0)
+		return result;
 }
 
 int recv_from(int file_descriptor, char *message)
@@ -35,4 +37,15 @@ int recv_from(int file_descriptor, char *message)
 		if (message[result - 1] == '\n')
 			message[result - 1] = '\0';
 	return result;
+}
+
+bool time_passed(chrono::high_resolution_clock::time_point start, int time)
+{
+	chrono::duration<double> elapsed;
+	auto end = chrono::high_resolution_clock::now();
+	elapsed = start - end;
+	if (floor(elapsed.count()) > time)
+		return true;
+	else
+		return false;
 }
