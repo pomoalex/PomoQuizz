@@ -222,8 +222,9 @@ void ConnectionAttempt(sf::RenderWindow &window)
 		option = 2;
 	else
 	{
-		send_to(client_sd, (char *)username.c_str());
 		char message[256];
+		sprintf(message, "%s\n", (char *)username.c_str());
+		send_to(client_sd, message);
 		int auxiliary;
 		recv_from(client_sd, message);
 		printf("%s from server\n", message);
@@ -431,11 +432,6 @@ void PomoQuizz(sf::RenderWindow &window)
 								   (WindowHeight - answers[2].getGlobalBounds().height) * 0.85);
 			answers[3].setPosition((WindowWidth - answers[3].getGlobalBounds().width) * 0.75,
 								   (WindowHeight - answers[3].getGlobalBounds().height) * 0.85);
-			if (!send_to(client_sd, temp))
-			{
-				printf("Server down !\n");
-				break;
-			}
 		}
 		window.clear();
 		window.draw(background);

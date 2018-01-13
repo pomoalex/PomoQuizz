@@ -10,5 +10,6 @@ class Player
 	string username;
 	int score = 0;
 	int socket_descriptor;
+
   private:
 };

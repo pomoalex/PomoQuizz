@@ -2,7 +2,7 @@ COMPILER=g++
 
 all: Server Client Database.sqlite
 
-Server: Server.cpp Quizz.o Definitions.h
+Server: Server.cpp Quizz.o Player.o Definitions.h
 	$(COMPILER) Server.cpp Player.o Quizz.o Database.o -o Server -pthread -lsqlite3
 
 Player.o: Player.cpp Player.h
@@ -22,4 +22,4 @@ Database.sqlite: Database.o CreateDatabase.cpp Database.h
 	./CreateDatabase
 
 clean:
-	rm Server Client 
+	rm Server Client Player.o Quizz.o Database.o 

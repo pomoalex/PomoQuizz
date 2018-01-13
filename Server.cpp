@@ -2,15 +2,13 @@
 #include "Player.h"
 #include "Quizz.h"
 #include <vector>
-#define WAITING_TIME 2
+#define WAITING_TIME 15
 mutex locker;
 extern int errno;
 
-void close_socket(int *socket_descriptor, chrono::high_resolution_clock::time_point start, int seconds);
+bool login_attempt(Player &player, chrono::high_resolution_clock::time_point &start);
 
-void login_attempt(vector<Player> &players, int socket_descriptor, chrono::high_resolution_clock::time_point start);
-
-void PomoQuizz(vector<Player> players);
+void PomoQuizz(Player &player, bool &adding, bool &server_ok);
 
 void PlayPomoQuizz(Quizz &quizz, Player player);
 
@@ -25,12 +23,8 @@ int main()
 	struct sockaddr_in client;
 	int client_sd;
 	socklen_t length = sizeof(client);
-	int nr_client = 0;
-	int room = 0;
 	while (1)
 	{
-		room++;
-		printf("Room %d started !\n", room);
 		if ((server_sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		{
 			perror("error at socket().\n");
@@ -50,74 +44,78 @@ int main()
 		}
 		bzero(&client, sizeof(client));
 		fflush(stdout);
-		vector<Player> players;
-		auto start = chrono::high_resolution_clock::now();
-		thread terminate_accept(close_socket, &server_sd, start, WAITING_TIME);
-		terminate_accept.detach();
-		do
+		Player player;
+		bool adding = false;
+		bool server_ok = true;
+		thread execute(PomoQuizz, ref(player), ref(adding), ref(server_ok));
+		execute.detach();
+		while ((client_sd = accept(server_sd, (struct sockaddr *)&client, &length)) > 0)
 		{
-			while ((client_sd = accept(server_sd, (struct sockaddr *)&client, &length)) >= 0)
-			{
-				nr_client++;
-				printf("Client %d just connected in room %d !\n", nr_client, room);
-				thread login(login_attempt, ref(players), client_sd, start);
-				login.join();
-			}
-		thread match(PomoQuizz, players);
-		match.detach();
-		players.clear();
-	}
-}
-
-void close_socket(int *socket_descriptor, chrono::high_resolution_clock::time_point start, int seconds)
-{
-	chrono::high_resolution_clock::time_point finish;
-	while (1)
-	{
-		finish = chrono::high_resolution_clock::now();
-		chrono::duration<double> elapsed = finish - start;
-		if (elapsed.count() > seconds)
-		{
-			shutdown(*socket_descriptor, SHUT_RDWR);
-			close(*socket_descriptor);
-			printf("aici intra\n");
-			break;
+			while (adding)
+				;
+			player.socket_descriptor = client_sd;
+			adding = true;
 		}
+		server_ok = false;
 	}
 }
 
-void login_attempt(vector<Player> &players, int socket_descriptor, chrono::high_resolution_clock::time_point start)
+bool login_attempt(Player &player, chrono::high_resolution_clock::time_point &start)
 {
 	char username[256];
-	if (recv_from(socket_descriptor, username) > 0)
+	if (recv_from(player.socket_descriptor, username) > 0)
 	{
-		Player new_player;
-		new_player.username = username;
-		new_player.socket_descriptor = socket_descriptor;
-		locker.lock();
-		players.push_back(new_player);
-		locker.unlock();
 		char message[256];
-		auto current_time = chrono::high_resolution_clock::now();
-		chrono::duration<double> elapsed = current_time - start;
-		sprintf(message, "%d\n", (WAITING_TIME - (int)floor(elapsed.count())));
-		send_to(socket_descriptor, message);
+		sprintf(message, "%d\n", (WAITING_TIME + 3 - (int)passed_time(start)));
+		player.username = username;
+		if (send_to(player.socket_descriptor, message) > 0)
+			return true;
+		else
+			return false;
 	}
 	else
-	{
-		shutdown(socket_descriptor, SHUT_RDWR);
-		close(socket_descriptor);
-	}
+		return false;
 }
 
-void PomoQuizz(vector<Player> players)
+void PomoQuizz(Player &player, bool &adding, bool &server_ok)
 {
+	srand(time(NULL));
 	Quizz quizz;
+	vector<Player> players;
+	bool players_added = false;
+	auto start = chrono::high_resolution_clock::now();
+	int room = 1;
 	thread execute;
-	for (auto iterator = players.begin(); iterator != players.end(); iterator++)
+	printf("Room %d started\n", room);
+	while (server_ok)
 	{
-		execute = thread(PlayPomoQuizz, ref(quizz), *iterator);
-		execute.detach();
+		if (adding)
+		{
+			if (login_attempt(player, start))
+			{
+				players.push_back(player);
+				players_added = true;
+				printf("%s just connected\n", (char *)player.username.c_str());
+			}
+			adding = false;
+		}
+		if (passed_time(start) > WAITING_TIME)
+		{
+			if (players_added)
+			{
+				quizz.Reinitialize();
+				for (auto iterator = players.begin(); iterator != players.end(); iterator++)
+				{
+					execute = thread(PlayPomoQuizz, ref(quizz), *iterator);
+					execute.detach();
+				}
+				players.clear();
+				players_added = false;
+			}
+			start = chrono::high_resolution_clock::now();
+			room++;
+			printf("Room %d started\n", room);
+		}
 	}
 }
 

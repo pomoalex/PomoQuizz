@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include <string>
 #include <vector>
 #include "sqlite3.h"
@@ -13,15 +13,17 @@ struct Question
 
 class Quizz
 {
-public:
+  public:
 	Quizz();
 	~Quizz();
 	void Reinitialize();
 	void PrintQuestions();
-	void GetQuestion(int question_nr , vector<string> &result);
-private:
+	void GetQuestion(int question_nr, vector<string> &result);
+
+  private:
 	bool concluded = false;
 	string winner;
 	int score;
+	bool first_quizz;
 	vector<Question> questions;
 };

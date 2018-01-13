@@ -4,6 +4,7 @@
 
 Quizz::Quizz()
 {
+	first_quizz = true;
 	Reinitialize();
 }
 
@@ -17,7 +18,12 @@ void Quizz::Reinitialize()
 	database = new Database("Database.sqlite");
 	vector<vector<string>> result = database->query("SELECT * FROM Questions  \
 		ORDER BY RANDOM() LIMIT 10;");
-    srand(time(0));
+	questions.clear();
+	if (first_quizz)
+	{
+		srand(time(0));
+		first_quizz = false;
+	}
 	for (auto iterator = result.begin(); iterator < result.end(); ++iterator)
 	{
 		vector<string> row = *iterator;
@@ -53,7 +59,7 @@ void Quizz::PrintQuestions()
 	}
 }
 
-void Quizz::GetQuestion(int question_nr , vector<string> &result)
+void Quizz::GetQuestion(int question_nr, vector<string> &result)
 {
 	auto temp = questions[question_nr];
 	result.clear();
@@ -62,7 +68,7 @@ void Quizz::GetQuestion(int question_nr , vector<string> &result)
 	result.push_back(temp.answers[1]);
 	result.push_back(temp.answers[2]);
 	result.push_back(temp.answers[3]);
-	char auxiliary [1];
-	sprintf(auxiliary,"%d",temp.correct_answer);
+	char auxiliary[1];
+	sprintf(auxiliary, "%d", temp.correct_answer);
 	result.push_back(auxiliary);
 }

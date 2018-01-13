@@ -39,13 +39,10 @@ int recv_from(int file_descriptor, char *message)
 	return result;
 }
 
-bool time_passed(chrono::high_resolution_clock::time_point start, int time)
+double passed_time(chrono::high_resolution_clock::time_point start)
 {
 	chrono::duration<double> elapsed;
 	auto end = chrono::high_resolution_clock::now();
-	elapsed = start - end;
-	if (floor(elapsed.count()) > time)
-		return true;
-	else
-		return false;
+	elapsed = end - start;
+	return elapsed.count();
 }
