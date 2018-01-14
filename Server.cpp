@@ -1,5 +1,4 @@
 #include "Definitions.h"
-#include "Player.h"
 #include "Quizz.h"
 #include <vector>
 #define WAITING_TIME 1
@@ -9,6 +8,8 @@ extern int errno;
 bool login_attempt(Player &player, chrono::high_resolution_clock::time_point &start);
 
 void PomoQuizz(Player &player, bool &adding, bool &server_ok);
+
+void PomoQuizzMatch(Quizz quizz);
 
 void PlayPomoQuizz(Quizz &quizz, Player player);
 
@@ -79,10 +80,9 @@ bool login_attempt(Player &player, chrono::high_resolution_clock::time_point &st
 
 void PomoQuizz(Player &player, bool &adding, bool &server_ok)
 {
-	srand(time(NULL));
 	Quizz quizz;
 	vector<Player> players;
-	bool players_added = false;
+	int players_added = 0;
 	auto start = chrono::high_resolution_clock::now();
 	int room = 1;
 	thread execute;
@@ -94,7 +94,7 @@ void PomoQuizz(Player &player, bool &adding, bool &server_ok)
 			if (login_attempt(player, start))
 			{
 				players.push_back(player);
-				players_added = true;
+				players_added++;
 				printf("%s just connected\n", (char *)player.username.c_str());
 			}
 			adding = false;
@@ -103,14 +103,13 @@ void PomoQuizz(Player &player, bool &adding, bool &server_ok)
 		{
 			if (players_added)
 			{
-				quizz.Reinitialize();
-				for (auto iterator = players.begin(); iterator != players.end(); iterator++)
-				{
-					execute = thread(PlayPomoQuizz, ref(quizz), *iterator);
-					execute.detach();
-				}
+				quizz.players = players;
+				quizz.number_of_players = players_added;
 				players.clear();
-				players_added = false;
+				execute = thread(PomoQuizzMatch, quizz);
+				execute.detach();
+				players_added = 0;
+				quizz.Reinitialize();
 			}
 			start = chrono::high_resolution_clock::now();
 			room++;
@@ -119,26 +118,49 @@ void PomoQuizz(Player &player, bool &adding, bool &server_ok)
 	}
 }
 
-void PlayPomoQuizz(Quizz &new_quizz, Player player)
+void PomoQuizzMatch(Quizz quizz)
 {
-	Quizz quizz = new_quizz;
+	thread execute;
+	for (auto iterator = quizz.players.begin(); iterator != quizz.players.end(); iterator++)
+	{
+		execute = thread(PlayPomoQuizz, ref(quizz), *iterator);
+		execute.detach();
+	}
+	while (!quizz.game_ended)
+		;
+}
+
+void PlayPomoQuizz(Quizz &quizz, Player player)
+{
 	vector<string> question;
 	int length;
+	int given_answer;
+	int correct_answer;
 	for (int index = 0; index < 10; index++)
 	{
 		char temp[300];
-		quizz.GetQuestion(index, question);
+		correct_answer = quizz.GetQuestion(index, question) + 1;
 		sprintf(temp, "%s\n%s\n%s\n%s\n%s\n",
 				(char *)question[0].c_str(),
 				(char *)question[1].c_str(),
 				(char *)question[2].c_str(),
 				(char *)question[3].c_str(),
 				(char *)question[4].c_str());
-		send_to(player.socket_descriptor,temp);
-		/*if (!recv_from(player.socket_descriptor, temp))
+		send_to(player.socket_descriptor, temp);
+		if (read_from(player.socket_descriptor, &given_answer, (int)sizeof(int)) > 0)
+			printf("given answer : %d\n", given_answer);
+		else
 		{
-			printf("Client exited unexpectedly .\n");
+			printf("%s has disconnected unexpectedly\n", (char *)player.username.c_str());
 			break;
-		}*/
+		}
+		if (given_answer == correct_answer)
+		{
+			given_answer = 1;
+			player.score++;
+		}
+		else
+			given_answer = 0;
+		send_to(player.socket_descriptor, &given_answer, (int)sizeof(int));
 	}
 }

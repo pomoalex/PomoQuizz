@@ -77,7 +77,7 @@ int main()
 		'Which soft drink occasionally features polar bears in advertisments ?',\
 		'Coca-Cola','Sprite','Dr.Pepper','Mountain Dew',1);");
 	database->query("INSERT INTO Questions VALUES(\
-		'What \"Friends\" star mariied and divorced Brad Pitt ?',\
+		'What \"Friends\" star maried and divorced Brad Pitt ?',\
 		'Jennifer Anniston','Reese Witherspoon','Courtney Cox','Lisa Kudrow',1);");
 	database->query("INSERT INTO Questions VALUES(\
 		'Which boxer had his ears bitten by Mike Tyson ?',\
@@ -101,8 +101,8 @@ int main()
 		'Of the following superheroes who does not wear a cape ?',\
 		'Spider-Man','Batman','Robin','Superman',1);");
 	database->query("INSERT INTO Questions VALUES(\
-		'Which of the followwing is not a root vegetable ?',\
-		'Zucchini','Carrot','Radish','',1);");//30 questions
+		'Which of the following is not a root vegetable ?',\
+		'Zucchini','Carrot','Radish','Beet',1);");//30 questions
 	database->close();
 	return 0;
 }

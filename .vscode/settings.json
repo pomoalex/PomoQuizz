@@ -1,6 +1,8 @@
 {
 	"files.associations": {
 		"functional": "cpp",
-		"typeinfo": "cpp"
+		"typeinfo": "cpp",
+		"array": "cpp",
+		"initializer_list": "cpp"
 	}
 }

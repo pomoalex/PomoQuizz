@@ -19,6 +19,7 @@ mutex locker;
 sf::Sprite background;
 sf::Font font;
 sf::Texture temp_texture;
+sf::Color color = sf::Color::Red;
 int WindowWidth, WindowHeight;
 string username;
 extern int errno;
@@ -37,6 +38,18 @@ void ConnectionAttempt(sf::RenderWindow &window);
 void DrawConnection(sf::RenderWindow &window, int &option);
 
 void PomoQuizz(sf::RenderWindow &window);
+
+void PrepareBoxes(sf::RectangleShape box[]);
+
+void CenterInBox(sf::Text &text, sf::RectangleShape box);
+
+void CenterInBox2(sf::Text &text, sf::Text &aux, sf::RectangleShape box, bool &double_lined);
+
+void PrepareText(sf::Text &text, sf::Font &font, sf::Color color, int size, sf::Text::Style style = sf::Text::Regular);
+
+void GetQuestion(sf::Text &question, sf::Text answers[4]);
+
+void DisplayMessage(sf::RenderWindow &window, string message, float seconds, bool effect = false);
 
 int main()
 {
@@ -69,7 +82,7 @@ void InitWindow(sf::RenderWindow &window)
 	sf::VideoMode DesktopMode = sf::VideoMode::getDesktopMode();
 	WindowHeight = DesktopMode.height * 0.6;
 	WindowWidth = DesktopMode.width * 0.6;
-	window.create(sf::VideoMode(WindowWidth, WindowHeight), TITLE, sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize);
+	window.create(sf::VideoMode(WindowWidth, WindowHeight), TITLE, sf::Style::Titlebar | sf::Style::Close);
 	window.setVerticalSyncEnabled(true);
 	window.setPosition(sf::Vector2i((DesktopMode.width - WindowWidth) / 2, (DesktopMode.height - WindowHeight) / 2));
 	if (!temp_texture.loadFromFile(BACKGROUND))
@@ -345,29 +358,262 @@ void PomoQuizz(sf::RenderWindow &window)
 	int question_nr = 0;
 	bool answering = false;
 	bool answered;
-	bool double_line = false;
-	sf::Text question;
-	sf::Text answers[4];
-	sf::Text aux;
-	question.setFont(font);
-	question.setFillColor(sf::Color::Red);
-	question.setStyle(sf::Text::Bold);
-	aux.setFont(font);
-	aux.setFillColor(sf::Color::Red);
-	aux.setStyle(sf::Text::Bold);
-	question.setCharacterSize(WindowHeight * 0.06);
-	aux.setCharacterSize(WindowHeight * 0.06);
+	int given_answer = 0;
+	bool double_lined;
+	int cursor_in_box = 0;
+	int score_val = 0;
+	sf::Text question, answers[4], aux, timer, hovered_answer, score;
+	sf::RectangleShape box[8];
+	PrepareBoxes(box);
+	PrepareText(question, font, color, WindowHeight * 0.06, sf::Text::Bold);
+	PrepareText(aux, font, color, WindowHeight * 0.06, sf::Text::Bold);
+	PrepareText(timer, font, color, WindowHeight * 0.1, sf::Text::Bold);
+	PrepareText(score, font, color, WindowHeight * 0.07);
+	PrepareText(hovered_answer, font, sf::Color::Magenta, WindowHeight * 0.05);
 	for (int index = 0; index < 4; index++)
-	{
-		answers[index].setFont(font);
-		answers[index].setFillColor(sf::Color::Red);
-		answers[index].setCharacterSize(WindowHeight * 0.06);
-	}
-	chrono::high_resolution_clock::time_point start;
-	chrono::high_resolution_clock::time_point finish;
-	chrono::duration<double> elapsed;
+		PrepareText(answers[index], font, color, WindowHeight * 0.05);
 	sf::Event event;
+	sf::Vector2i cursor_pos;
+
+	auto start = chrono::high_resolution_clock::now();
 	while (window.isOpen() && game_state == STATE::PLAYING)
+	{
+		cursor_pos = sf::Mouse::getPosition(window);
+		while (window.pollEvent(event))
+		{
+			switch (event.type)
+			{
+			case sf::Event::Closed:
+				window.close();
+				break;
+			case sf::Event::MouseButtonReleased:
+				if (event.mouseButton.button == sf::Mouse::Left)
+				{
+					for (int index = 1; index <= 4; index++)
+					{
+						if (box[index].getGlobalBounds().contains(static_cast<sf::Vector2f>(cursor_pos)))
+						{
+							given_answer = index;
+							answered = true;
+						}
+					}
+				}
+				break;
+			}
+		}
+		if (question_nr < 10 && !answering)
+		{
+			start = chrono::high_resolution_clock::now();
+			question_nr++;
+			answering = true;
+			answered = false;
+			given_answer = 0;
+			GetQuestion(question, answers);
+			CenterInBox2(question, aux, box[0], double_lined);
+			CenterInBox(answers[0], box[1]);
+			CenterInBox(answers[1], box[2]);
+			CenterInBox(answers[2], box[3]);
+			CenterInBox(answers[3], box[4]);
+		}
+		if (passed_time(start) >= TIME_PER_ANSWER)
+			answered = true;
+		if (answered)
+		{
+			send_to(client_sd, &given_answer, (int)sizeof(int));
+			int result;
+			read_from(client_sd, &result, (int)sizeof(int));
+			if (given_answer == 0)
+				DisplayMessage(window, "Out of time !", 1, true);
+			else
+			{
+				if (result == 1)
+				{
+					DisplayMessage(window, "Correct !", 1, true);
+					score_val += 100;
+				}
+				else
+					DisplayMessage(window, "Wrong !", 1, true);
+			}
+			answering = false;
+		}
+		char temp[100];
+		sprintf(temp, "%d", (int)(TIME_PER_ANSWER - passed_time(start)));
+		timer.setString(temp);
+		CenterInBox(timer, box[5]);
+		sprintf(temp, "Score : %d", score_val);
+		score.setString(temp);
+		CenterInBox(score, box[7]);
+		bool cursor_in_any_box = false;
+		for (int index = 1; index <= 4; index++)
+		{
+			if (box[index].getGlobalBounds().contains(static_cast<sf::Vector2f>(cursor_pos)))
+			{
+				cursor_in_any_box = true;
+				hovered_answer.setString(answers[index - 1].getString());
+				if (cursor_in_box == index)
+				{
+					if (hovered_answer.getCharacterSize() < box[index].getGlobalBounds().height * 0.35)
+						hovered_answer.setCharacterSize(hovered_answer.getCharacterSize() + 2);
+				}
+				else
+					hovered_answer.setCharacterSize(answers[0].getCharacterSize());
+				CenterInBox(hovered_answer, box[index]);
+				cursor_in_box = index;
+			}
+		}
+		if (!cursor_in_any_box)
+			cursor_in_box = 0;
+		window.clear();
+		window.draw(background);
+		window.draw(timer);
+		window.draw(score);
+		window.draw(box[0]);
+		window.draw(question);
+		if (double_lined)
+			window.draw(aux);
+		for (int index = 1; index <= 4; index++)
+		{
+			if (index == cursor_in_box)
+				window.draw(hovered_answer);
+			else
+				window.draw(answers[index - 1]);
+			window.draw(box[index]);
+		}
+		window.draw(box[5]);
+		window.draw(box[6]);
+		window.draw(box[7]);
+		window.display();
+	}
+	game_state = STATE::LOGIN;
+}
+
+void PrepareBoxes(sf::RectangleShape box[])
+{
+	int thickness = 2;
+	int indent = WindowWidth * 0.02;
+	//question
+	box[0].setSize(sf::Vector2f(WindowWidth - 2 * indent, WindowHeight * 0.35 - 2 * indent));
+	box[0].setOutlineColor(sf::Color::White);
+	box[0].setOutlineThickness(thickness);
+	box[0].setFillColor(sf::Color::Transparent);
+	box[0].setPosition(indent, WindowHeight * 0.15 + indent);
+	//answer1
+	box[1].setSize(sf::Vector2f(WindowWidth / 2 - 1.5 * indent, WindowHeight / 4 - 1.5 * indent));
+	box[1].setOutlineColor(sf::Color::White);
+	box[1].setOutlineThickness(thickness);
+	box[1].setFillColor(sf::Color::Transparent);
+	box[1].setPosition(indent, WindowHeight / 2 + indent);
+	//answer2
+	box[2].setSize(sf::Vector2f(WindowWidth / 2 - 1.5 * indent, WindowHeight / 4 - 1.5 * indent));
+	box[2].setOutlineColor(sf::Color::White);
+	box[2].setOutlineThickness(thickness);
+	box[2].setFillColor(sf::Color::Transparent);
+	box[2].setPosition(WindowWidth / 2 + indent / 2, WindowHeight / 2 + indent);
+	//answer3
+	box[3].setSize(sf::Vector2f(WindowWidth / 2 - 1.5 * indent, WindowHeight / 4 - 1.5 * indent));
+	box[3].setOutlineColor(sf::Color::White);
+	box[3].setOutlineThickness(thickness);
+	box[3].setFillColor(sf::Color::Transparent);
+	box[3].setPosition(indent, WindowHeight * 0.75 + indent / 2);
+	//answer4
+	box[4].setSize(sf::Vector2f(WindowWidth / 2 - 1.5 * indent, WindowHeight / 4 - 1.5 * indent));
+	box[4].setOutlineColor(sf::Color::White);
+	box[4].setOutlineThickness(thickness);
+	box[4].setFillColor(sf::Color::Transparent);
+	box[4].setPosition(WindowWidth / 2 + indent / 2, WindowHeight * 0.75 + indent / 2);
+	//timer
+	box[5].setSize(sf::Vector2f(WindowWidth * 0.2, WindowHeight * 0.15 - indent));
+	box[5].setOutlineColor(sf::Color::White);
+	box[5].setOutlineThickness(thickness);
+	box[5].setFillColor(sf::Color::Transparent);
+	box[5].setPosition((WindowWidth - box[5].getGlobalBounds().width) / 2, indent);
+	//username
+	box[6].setSize(sf::Vector2f(WindowWidth * 0.4 - 2 * indent, WindowHeight * 0.15 - indent));
+	box[6].setOutlineColor(sf::Color::White);
+	box[6].setOutlineThickness(thickness);
+	box[6].setFillColor(sf::Color::Transparent);
+	box[6].setPosition(indent, indent);
+	//score
+	box[7].setSize(sf::Vector2f(WindowWidth * 0.4 - 2 * indent, WindowHeight * 0.15 - indent));
+	box[7].setOutlineColor(sf::Color::White);
+	box[7].setOutlineThickness(thickness);
+	box[7].setFillColor(sf::Color::Transparent);
+	box[7].setPosition(box[5].getPosition().x + box[5].getGlobalBounds().width + indent, indent);
+}
+
+void CenterInBox(sf::Text &text, sf::RectangleShape box)
+{
+	text.setPosition(box.getPosition().x + (box.getGlobalBounds().width - text.getGlobalBounds().width) / 2,
+					 box.getPosition().y + (box.getGlobalBounds().height - text.getCharacterSize()) / 2);
+}
+
+void CenterInBox2(sf::Text &text, sf::Text &aux, sf::RectangleShape box, bool &double_lined)
+{
+	double_lined = false;
+	CenterInBox(text, box);
+	if (text.getGlobalBounds().width > 0.9 * box.getGlobalBounds().width)
+	{
+		double_lined = true;
+		float percentage = (box.getGlobalBounds().width * 0.9) / text.getGlobalBounds().width;
+		string substr1, substr2, full_str;
+		full_str = text.getString();
+		int poz = full_str.length() * percentage;
+		while (full_str[poz] != ' ')
+			poz--;
+		substr1 = full_str.substr(0, poz);
+		substr2 = full_str.substr(poz, full_str.length() - 1);
+		text.setString(substr1);
+		aux.setString(substr2);
+		sf::RectangleShape box1, box2;
+		box1.setSize(sf::Vector2f(box.getGlobalBounds().width, box.getGlobalBounds().height / 2));
+		box1.setPosition(box.getPosition().x, box.getPosition().y);
+		box2.setSize(sf::Vector2f(box.getGlobalBounds().width, box.getGlobalBounds().height / 2));
+		box2.setPosition(box.getPosition().x, box.getPosition().y + box.getGlobalBounds().height / 2);
+		CenterInBox(text, box1);
+		CenterInBox(aux, box2);
+	}
+}
+
+void PrepareText(sf::Text &text, sf::Font &font, sf::Color color, int size, sf::Text::Style style)
+{
+	text.setFillColor(color);
+	text.setFont(font);
+	text.setStyle(style);
+	text.setCharacterSize(size);
+}
+
+void GetQuestion(sf::Text &question, sf::Text answers[4])
+{
+	char temp[300];
+	recv_from(client_sd, temp);
+	char *token;
+	token = strtok(temp, "\n");
+	question.setString(token);
+	token = strtok(NULL, "\n");
+	answers[0].setString(token);
+	token = strtok(NULL, "\n");
+	answers[1].setString(token);
+	token = strtok(NULL, "\n");
+	answers[2].setString(token);
+	token = strtok(NULL, "\n");
+	answers[3].setString(token);
+}
+
+void DisplayMessage(sf::RenderWindow &window, string message, float seconds, bool effect)
+{
+	sf::Text text;
+	text.setString(message);
+	if (effect)
+		PrepareText(text, font, color, WindowHeight * 0.01, sf::Text::Bold);
+	else
+		PrepareText(text, font, color, WindowHeight * 0.1, sf::Text::Bold);
+	sf::RectangleShape box;
+	box.setPosition(0, 0);
+	box.setSize(sf::Vector2f(WindowWidth, WindowHeight));
+	CenterInBox(text, box);
+	auto start = chrono::high_resolution_clock::now();
+	sf::Event event;
+	while (window.isOpen() && passed_time(start) < seconds)
 	{
 		while (window.pollEvent(event))
 		{
@@ -378,72 +624,14 @@ void PomoQuizz(sf::RenderWindow &window)
 				break;
 			}
 		}
-		if (question_nr < 10 && !answering)
-		{
-			start = chrono::high_resolution_clock::now();
-			question_nr++;
-			answering = true;
-			answered = false;
-			char temp[256];
-			if (!recv_from(client_sd, temp))
-			{
-				printf("Server down !\n");
-				break;
-			}
-			char *token;
-			token = strtok(temp, "\n");
-			question.setString(token);
-			token = strtok(NULL, "\n");
-			answers[0].setString(token);
-			token = strtok(NULL, "\n");
-			answers[1].setString(token);
-			token = strtok(NULL, "\n");
-			answers[2].setString(token);
-			token = strtok(NULL, "\n");
-			answers[3].setString(token);
-			question.setPosition((WindowWidth - question.getGlobalBounds().width) * 0.5,
-								 (WindowHeight - question.getGlobalBounds().height) * 0.35);
-			float percentage = 0.75;
-			while (1)
-			{
-				if (WindowWidth * 0.9 < question.getGlobalBounds().width)
-				{
-					percentage -= 0.05;
-					double_line = true;
-					string substr1, substr2, full_str;
-					full_str = question.getString();
-					int poz = full_str.length() * percentage;
-					while (full_str[poz] != ' ')
-						poz--;
-					substr1 = full_str.substr(0, poz);
-					substr2 = full_str.substr(poz, full_str.length() - 1);
-					question.setString(substr1);
-					aux.setString(substr2);
-					question.setPosition((WindowWidth - question.getGlobalBounds().width) * 0.5,
-										 (WindowHeight - question.getGlobalBounds().height) * 0.25);
-					aux.setPosition((WindowWidth - aux.getGlobalBounds().width) * 0.5,
-									question.getPosition().y + question.getGlobalBounds().height);
-				}
-				else
-					break;
-			}
-			answers[0].setPosition((WindowWidth - answers[0].getGlobalBounds().width) * 0.25,
-								   (WindowHeight - answers[0].getGlobalBounds().height) * 0.6);
-			answers[1].setPosition((WindowWidth - answers[1].getGlobalBounds().width) * 0.75,
-								   (WindowHeight - answers[1].getGlobalBounds().height) * 0.6);
-			answers[2].setPosition((WindowWidth - answers[2].getGlobalBounds().width) * 0.25,
-								   (WindowHeight - answers[2].getGlobalBounds().height) * 0.85);
-			answers[3].setPosition((WindowWidth - answers[3].getGlobalBounds().width) * 0.75,
-								   (WindowHeight - answers[3].getGlobalBounds().height) * 0.85);
-		}
 		window.clear();
 		window.draw(background);
-		window.draw(question);
-		if (double_line)
-			window.draw(aux);
-		for (int index = 0; index < 4; index++)
-			window.draw(answers[index]);
+		window.draw(text);
 		window.display();
+		if (effect && text.getCharacterSize() < WindowHeight * 0.1)
+		{
+			text.setCharacterSize(text.getCharacterSize() + 5);
+			CenterInBox(text, box);
+		}
 	}
-	game_state = STATE::LOGIN;
 }

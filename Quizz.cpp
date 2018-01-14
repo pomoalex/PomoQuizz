@@ -14,6 +14,9 @@ Quizz::~Quizz()
 
 void Quizz::Reinitialize()
 {
+	players.clear();
+	game_ended = false;
+	number_of_players = 0;
 	Database *database;
 	database = new Database("Database.sqlite");
 	vector<vector<string>> result = database->query("SELECT * FROM Questions  \
@@ -59,7 +62,7 @@ void Quizz::PrintQuestions()
 	}
 }
 
-void Quizz::GetQuestion(int question_nr, vector<string> &result)
+int Quizz::GetQuestion(int question_nr, vector<string> &result)
 {
 	auto temp = questions[question_nr];
 	result.clear();
@@ -68,7 +71,5 @@ void Quizz::GetQuestion(int question_nr, vector<string> &result)
 	result.push_back(temp.answers[1]);
 	result.push_back(temp.answers[2]);
 	result.push_back(temp.answers[3]);
-	char auxiliary[1];
-	sprintf(auxiliary, "%d", temp.correct_answer);
-	result.push_back(auxiliary);
+	return (int)temp.correct_answer;
 }

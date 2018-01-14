@@ -3,6 +3,7 @@
 #include <vector>
 #include "sqlite3.h"
 #include "Database.h"
+#include "Player.h"
 using namespace std;
 struct Question
 {
@@ -18,12 +19,12 @@ class Quizz
 	~Quizz();
 	void Reinitialize();
 	void PrintQuestions();
-	void GetQuestion(int question_nr, vector<string> &result);
+	int GetQuestion(int question_nr, vector<string> &result);
+	vector<Player> players;
+	bool game_ended;
+	int number_of_players;
 
   private:
-	bool concluded = false;
-	string winner;
-	int score;
 	bool first_quizz;
 	vector<Question> questions;
 };
