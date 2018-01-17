@@ -16,6 +16,7 @@ enum class STATE
 };
 STATE game_state;
 mutex locker;
+sf::RenderWindow window;
 sf::Sprite background;
 sf::Font font;
 sf::Texture temp_texture;
@@ -25,23 +26,25 @@ string username;
 extern int errno;
 int client_sd;
 
-void InitWindow(sf::RenderWindow &window);
+void InitWindow();
 
-void Intro(sf::RenderWindow &window);
+void Intro();
 
-void DrawIntro(sf::RenderWindow &window);
+void DrawIntro();
 
-void ManageLogin(sf::RenderWindow &window);
+void ManageLogin();
 
-void ConnectionAttempt(sf::RenderWindow &window);
+void ConnectionAttempt();
 
-void DrawConnection(sf::RenderWindow &window, int &option);
+void DrawConnection(int &option);
 
-void PomoQuizz(sf::RenderWindow &window);
+void PomoQuizz();
 
 void PrepareBoxes(sf::RectangleShape box[]);
 
 void CenterInBox(sf::Text &text, sf::RectangleShape box);
+
+void AlignLeftInBox(sf::Text &text, sf::RectangleShape box);
 
 void CenterInBox2(sf::Text &text, sf::Text &aux, sf::RectangleShape box, bool &double_lined);
 
@@ -49,34 +52,33 @@ void PrepareText(sf::Text &text, sf::Font &font, sf::Color color, int size, sf::
 
 void GetQuestion(sf::Text &question, sf::Text answers[4]);
 
-void DisplayMessage(sf::RenderWindow &window, string message, float seconds, bool effect = false);
+void DisplayMessage(string message, float seconds, bool effect = false);
 
 int main()
 {
-	sf::RenderWindow window;
-	InitWindow(window);
-	game_state = STATE::LOGIN;
+	InitWindow();
+	game_state = STATE::INTRO;
 	while (window.isOpen())
 	{
 		switch (game_state)
 		{
 		case STATE::INTRO:
-			Intro(window);
+			Intro();
 			break;
 		case STATE::LOGIN:
-			ManageLogin(window);
+			ManageLogin();
 			break;
 		case STATE::CONNECTING:
-			ConnectionAttempt(window);
+			ConnectionAttempt();
 			break;
 		case STATE::PLAYING:
-			PomoQuizz(window);
+			PomoQuizz();
 			break;
 		}
 	}
 }
 
-void InitWindow(sf::RenderWindow &window)
+void InitWindow()
 {
 	game_state = STATE::INTRO;
 	sf::VideoMode DesktopMode = sf::VideoMode::getDesktopMode();
@@ -99,10 +101,10 @@ void InitWindow(sf::RenderWindow &window)
 	}
 }
 
-void Intro(sf::RenderWindow &window)
+void Intro()
 {
 	sf::Event event;
-	thread execute(DrawIntro, ref(window));
+	thread execute(DrawIntro);
 	execute.detach();
 	while (window.isOpen() && game_state == STATE::INTRO)
 	{
@@ -118,49 +120,117 @@ void Intro(sf::RenderWindow &window)
 	}
 }
 
-void DrawIntro(sf::RenderWindow &window)
+void DrawIntro()
 {
-	sf::Text text;
-	text.setFont(font);
-	text.setString(LOGO);
-	text.setCharacterSize(WindowHeight * 0.25);
-	text.setFillColor(sf::Color::Red);
-	text.setStyle(sf::Text::Bold);
-	text.setPosition((WindowWidth - text.getGlobalBounds().width) / 2, (WindowHeight - text.getGlobalBounds().height) * 0.4);
+	sf::Text text, name;
+	sf::Color new_color;
+	string name_str = "by Pomo Alex";
+	text.setString("PomoQuizz");
+	PrepareText(text, font, color, WindowHeight * 0.25, sf::Text::Bold);
+	PrepareText(name, font, color, WindowHeight * 0.08);
+	sf::RectangleShape box1, box2;
+	box1.setSize(sf::Vector2f(WindowWidth, WindowHeight * 0.85));
+	box1.setPosition(0, 0);
+	CenterInBox(text, box1);
+	box2.setSize(sf::Vector2f(WindowWidth * 0.3, WindowHeight * 0.2));
+	box2.setPosition(WindowWidth / 2, text.getPosition().y + text.getCharacterSize());
+	AlignLeftInBox(name, box2);
+	sf::Event event;
+	int length = 0;
+	int r = 100, g = 100, b = 100;
+	new_color.r = r;
+	new_color.g = g;
+	new_color.b = b;
+	int step = 3;
+	int color_type = 1;
+	bool add_to_color = true;
 	auto start = chrono::high_resolution_clock::now();
-	chrono::high_resolution_clock::time_point finish;
-	chrono::duration<double> elapsed;
-	int seconds = 3;
-	while (1)
+	while (window.isOpen() && passed_time(start) <= 3)
 	{
+		while (window.pollEvent(event))
+		{
+			switch (event.type)
+			{
+			case sf::Event::Closed:
+				window.close();
+				break;
+			}
+		}
+		switch (color_type)
+		{
+		case 1:
+			if ((r + step >= 255 && add_to_color) || (r - step <= 0) && !add_to_color)
+				add_to_color = !add_to_color;
+			if (add_to_color)
+				r += step;
+			else
+				r -= step;
+			new_color.r = r;
+			if ((r + step >= 255 && add_to_color) || (r - step <= 0) && !add_to_color)
+			{
+				color_type++;
+				add_to_color = !add_to_color;
+			}
+			break;
+		case 2:
+			if ((g + step >= 255 && add_to_color) || (g - step <= 1) && !add_to_color)
+				add_to_color = !add_to_color;
+			if (add_to_color)
+				g += step;
+			else
+				g -= step;
+			new_color.g = g;
+			if ((g + step >= 255 && add_to_color) || (g - step <= 1) && !add_to_color)
+			{
+				color_type++;
+				add_to_color = !add_to_color;
+			}
+			break;
+		case 3:
+			if ((b + step >= 255 && add_to_color) || (b - step <= 1) && !add_to_color)
+				add_to_color = !add_to_color;
+			if (add_to_color)
+				b += step;
+			else
+				b -= step;
+			new_color.b = b;
+			if ((b + step >= 255 && add_to_color) || (b - step <= 1) && !add_to_color)
+			{
+				color_type = 1;
+				add_to_color = !add_to_color;
+			}
+			break;
+		}
+		text.setFillColor(new_color);
+		name.setFillColor(new_color);
+		if (length < name_str.length() && passed_time(start) > 0.6)
+		{
+			start = chrono::high_resolution_clock::now();
+			length++;
+			if (name_str[length] == ' ')
+				length++;
+			name.setString(name_str.substr(0, length));
+		}
 		window.clear();
 		window.draw(background);
 		window.draw(text);
+		window.draw(name);
 		window.display();
-		finish = chrono::high_resolution_clock::now();
-		elapsed = finish - start;
-		if (elapsed.count() > seconds)
-			break;
 	}
 	game_state = STATE::LOGIN;
 }
 
-void ManageLogin(sf::RenderWindow &window)
+void ManageLogin()
 {
 	sf::Text login_text;
 	username = "username";
 	login_text.setString("Login");
-	login_text.setFont(font);
-	login_text.setCharacterSize(WindowHeight * 0.15);
-	login_text.setFillColor(sf::Color::Red);
-	login_text.setStyle(sf::Text::Bold);
+	PrepareText(login_text, font, color, WindowHeight * 0.15, sf::Text::Bold);
 	login_text.setPosition((WindowWidth - login_text.getGlobalBounds().width) / 2,
 						   (WindowHeight - login_text.getGlobalBounds().height) * 0.3);
 	sf::Text username_text;
-	username_text.setFont(font);
 	username_text.setString("ppppdddd");
-	username_text.setCharacterSize(WindowHeight * 0.08);
-	username_text.setFillColor(sf::Color::Red);
+	PrepareText(username_text, font, color, WindowHeight * 0.08);
 	int usr_text_height = (login_text.getPosition().y + login_text.getGlobalBounds().height +
 						   (WindowHeight - login_text.getGlobalBounds().height - login_text.getPosition().y -
 							username_text.getGlobalBounds().height) *
@@ -221,10 +291,10 @@ void ManageLogin(sf::RenderWindow &window)
 	game_state = STATE::CONNECTING;
 }
 
-void ConnectionAttempt(sf::RenderWindow &window)
+void ConnectionAttempt()
 {
 	int option = 0;
-	thread execute(DrawConnection, ref(window), ref(option));
+	thread execute(DrawConnection, ref(option));
 	struct sockaddr_in server;
 	if ((client_sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
@@ -258,32 +328,24 @@ void ConnectionAttempt(sf::RenderWindow &window)
 	execute.join();
 }
 
-void DrawConnection(sf::RenderWindow &window, int &option)
+void DrawConnection(int &option)
 {
 	sf::Text text;
 	string text_str = "Connecting to server ";
 	int text_len = text_str.length();
 	int init_option = 0;
-	text.setFont(font);
 	text.setString(text_str);
-	text.setCharacterSize(WindowHeight * 0.10);
-	text.setFillColor(sf::Color::Red);
-	text.setStyle(sf::Text::Bold);
+	PrepareText(text, font, color, WindowHeight * 0.1, sf::Text::Bold);
 	text.setPosition((WindowWidth - text.getGlobalBounds().width) / 2, (WindowHeight - text.getGlobalBounds().height) * 0.5);
 	sf::Event event;
 	bool conn_started = false;
-	chrono::high_resolution_clock::time_point finish;
 	chrono::high_resolution_clock::time_point conn_start;
-	chrono::duration<double> conn_elapsed;
-	chrono::duration<double> elapsed;
-	chrono::duration<double> total_elapsed;
 	float seconds = 0.5;
 	float wait_time = 2.5;
 	int remaining_seconds;
 	auto start = chrono::high_resolution_clock::now();
 	auto abs_start = chrono::high_resolution_clock::now();
-	total_elapsed = finish - abs_start;
-	while (window.isOpen() && (game_state == STATE::CONNECTING || option == 0 || total_elapsed.count() < wait_time))
+	while (window.isOpen() && (game_state == STATE::CONNECTING || option == 0 || passed_time(abs_start) < wait_time))
 	{
 		while (window.pollEvent(event))
 		{
@@ -294,27 +356,21 @@ void DrawConnection(sf::RenderWindow &window, int &option)
 				break;
 			}
 		}
-		finish = chrono::high_resolution_clock::now();
-		total_elapsed = finish - abs_start;
 		if (init_option != option)
-			if (total_elapsed.count() > wait_time)
+			if (passed_time(abs_start) > wait_time)
 			{
 				init_option = option;
 				abs_start = chrono::high_resolution_clock::now();
-				finish = chrono::high_resolution_clock::now();
-				total_elapsed = finish - abs_start;
 			}
 		if (init_option == 2 && !conn_started)
 		{
-			text_str = "Connection failed !";
-			text.setString(text_str);
-			text.setPosition((WindowWidth - text.getGlobalBounds().width) / 2, (WindowHeight - text.getGlobalBounds().height) * 0.5);
+			DisplayMessage("Connection failed !", 3);
 			game_state = STATE::LOGIN;
+			break;
 		}
 		if (init_option == 0)
 		{
-			elapsed = finish - start;
-			if (elapsed.count() > seconds)
+			if (passed_time(start) > seconds)
 			{
 				start = chrono::high_resolution_clock::now();
 				if (text_str.length() < text_len + 3)
@@ -332,9 +388,7 @@ void DrawConnection(sf::RenderWindow &window, int &option)
 		}
 		if (init_option > 2)
 		{
-			finish = chrono::high_resolution_clock::now();
-			conn_elapsed = finish - conn_start;
-			int temp_var = floor(option - conn_elapsed.count());
+			int temp_var = floor(option - passed_time(conn_start));
 			if ((remaining_seconds != temp_var) && temp_var >= 0)
 			{
 				remaining_seconds = temp_var;
@@ -353,7 +407,7 @@ void DrawConnection(sf::RenderWindow &window, int &option)
 	}
 }
 
-void PomoQuizz(sf::RenderWindow &window)
+void PomoQuizz()
 {
 	int question_nr = 0;
 	bool answering = false;
@@ -423,18 +477,22 @@ void PomoQuizz(sf::RenderWindow &window)
 			int result;
 			read_from(client_sd, &result, (int)sizeof(int));
 			if (given_answer == 0)
-				DisplayMessage(window, "Out of time !", 1, true);
+				DisplayMessage("Out of time !", 1, true);
 			else
 			{
 				if (result == 1)
 				{
-					DisplayMessage(window, "Correct !", 1, true);
+					DisplayMessage("Correct !", 1, true);
 					score_val += 100;
 				}
 				else
-					DisplayMessage(window, "Wrong !", 1, true);
+					DisplayMessage("Wrong !", 1, true);
 			}
 			answering = false;
+			if (question_nr == 10)
+				break;
+			else
+				continue;
 		}
 		char temp[100];
 		sprintf(temp, "%d", (int)(TIME_PER_ANSWER - passed_time(start)));
@@ -484,6 +542,9 @@ void PomoQuizz(sf::RenderWindow &window)
 		window.draw(box[7]);
 		window.display();
 	}
+	char temp[100];
+	recv_from(client_sd, temp);
+	DisplayMessage(temp, 5, true);
 	game_state = STATE::LOGIN;
 }
 
@@ -547,6 +608,12 @@ void CenterInBox(sf::Text &text, sf::RectangleShape box)
 					 box.getPosition().y + (box.getGlobalBounds().height - text.getCharacterSize()) / 2);
 }
 
+void AlignLeftInBox(sf::Text &text, sf::RectangleShape box)
+{
+	text.setPosition(box.getPosition().x,
+					 box.getPosition().y + (box.getGlobalBounds().height - text.getCharacterSize()) / 2);
+}
+
 void CenterInBox2(sf::Text &text, sf::Text &aux, sf::RectangleShape box, bool &double_lined)
 {
 	double_lined = false;
@@ -599,7 +666,7 @@ void GetQuestion(sf::Text &question, sf::Text answers[4])
 	answers[3].setString(token);
 }
 
-void DisplayMessage(sf::RenderWindow &window, string message, float seconds, bool effect)
+void DisplayMessage(string message, float seconds, bool effect)
 {
 	sf::Text text;
 	text.setString(message);

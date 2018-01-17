@@ -21,8 +21,10 @@ class Quizz
 	void PrintQuestions();
 	int GetQuestion(int question_nr, vector<string> &result);
 	vector<Player> players;
-	bool game_ended;
-	int number_of_players;
+	int highscore;
+	int players_ended_game;
+	int players_done;
+	Player winner ;
 
   private:
 	bool first_quizz;

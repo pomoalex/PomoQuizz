@@ -15,8 +15,8 @@ Quizz::~Quizz()
 void Quizz::Reinitialize()
 {
 	players.clear();
-	game_ended = false;
-	number_of_players = 0;
+	highscore = 0;
+	players_done = 0;
 	Database *database;
 	database = new Database("Database.sqlite");
 	vector<vector<string>> result = database->query("SELECT * FROM Questions  \

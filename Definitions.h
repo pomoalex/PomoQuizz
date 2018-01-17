@@ -15,7 +15,7 @@
 #include <pthread.h>
 #include <thread>
 #include <mutex>
-#define PORT 4321
+#define PORT 4322
 #define SERVER_IP "127.0.0.1"
 #define TIME_PER_ANSWER 5
 

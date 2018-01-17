@@ -1,7 +1,7 @@
 #include "Definitions.h"
 #include "Quizz.h"
 #include <vector>
-#define WAITING_TIME 30
+#define WAITING_TIME 1
 mutex locker;
 extern int errno;
 
@@ -120,15 +120,13 @@ void PomoQuizz(Player &player, bool &adding, bool &server_ok)
 void PomoQuizzMatch(Quizz quizz)
 {
 	thread execute;
-	quizz.winner = quizz.players[0];
 	for (auto iterator = quizz.players.begin(); iterator != quizz.players.end(); iterator++)
 	{
 		execute = thread(PlayPomoQuizz, ref(quizz), iterator);
 		execute.detach();
 	}
-	while (quizz.players_done * 2 != quizz.players.size())
+	while (quizz.players_done * 2 != quizz.players.size());
 		;
-	;
 }
 
 void PlayPomoQuizz(Quizz &quizz, vector<Player>::iterator player)
@@ -178,15 +176,10 @@ void PlayPomoQuizz(Quizz &quizz, vector<Player>::iterator player)
 	}
 	if (!player_down)
 	{
-		locker.lock();
-		quizz.players_ended_game++;
-		locker.unlock();
-		while (quizz.players_ended_game != quizz.players.size())
+		player->ended_game = true;
+		while (quizz.players_done != quizz.players.size())
 			;
 		sprintf(temp, "%s\n", (char *)quizz.winner.username.c_str());
 		send_to(player->socket_descriptor, temp);
-		locker.lock();
-		quizz.players_done++;
-		locker.unlock();
 	}
 }
