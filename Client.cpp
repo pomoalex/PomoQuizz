@@ -52,12 +52,14 @@ void PrepareText(sf::Text &text, sf::Font &font, sf::Color color, int size, sf::
 
 void GetQuestion(sf::Text &question, sf::Text answers[4]);
 
+void GetWinner(int client_sd, string &winner, bool &done, bool &success);
+
 void DisplayMessage(string message, float seconds, bool effect = false);
 
 int main()
 {
 	InitWindow();
-	game_state = STATE::INTRO;
+	game_state = STATE::LOGIN;
 	while (window.isOpen())
 	{
 		switch (game_state)
@@ -312,13 +314,17 @@ void ConnectionAttempt()
 		sprintf(message, "%s\n", (char *)username.c_str());
 		send_to(client_sd, message);
 		int auxiliary;
-		recv_from(client_sd, message);
-		printf("%s from server\n", message);
-		auxiliary = atoi(message);
-		if (auxiliary < 0)
+		if (!recv_from(client_sd, message))
 			option = 2;
 		else
-			option = auxiliary;
+		{
+			printf("%s from server\n", message);
+			auxiliary = atoi(message);
+			if (auxiliary < 0)
+				option = 2;
+			else
+				option = auxiliary;
+		}
 	}
 	if (option == 2)
 	{
@@ -475,7 +481,14 @@ void PomoQuizz()
 		{
 			send_to(client_sd, &given_answer, (int)sizeof(int));
 			int result;
-			read_from(client_sd, &result, (int)sizeof(int));
+			if (!read_from(client_sd, &result, (int)sizeof(int)))
+			{
+				DisplayMessage("Connection failed !", 2);
+				shutdown(client_sd, SHUT_RDWR);
+				close(client_sd);
+				game_state = STATE::LOGIN;
+				break;
+			}
 			if (given_answer == 0)
 				DisplayMessage("Out of time !", 1, true);
 			else
@@ -542,10 +555,40 @@ void PomoQuizz()
 		window.draw(box[7]);
 		window.display();
 	}
-	char temp[100];
-	recv_from(client_sd, temp);
-	DisplayMessage(temp, 5, true);
+	bool done = false;
+	bool success = true;
+	string winner;
+	thread execute(GetWinner, client_sd, ref(winner), ref(done), ref(success));
+	execute.detach();
+	sf::sleep(sf::milliseconds(100));
+	while (!done)
+		DisplayMessage("Waiting for all players to finish", 0.5);
+	if (success)
+	{
+		if (winner == username)
+			winner = "You";
+		winner = winner + " won !";
+		DisplayMessage(winner, 5, true);
+	}
 	game_state = STATE::LOGIN;
+}
+
+void GetWinner(int client_sd, string &winner, bool &done, bool &success)
+{
+	char temp[100];
+	if (!recv_from(client_sd, temp))
+	{
+		DisplayMessage("Connection failed !", 2);
+		shutdown(client_sd, SHUT_RDWR);
+		close(client_sd);
+		done = true;
+		success = false;
+	}
+	else
+	{
+		winner = temp;
+		done = true;
+	}
 }
 
 void PrepareBoxes(sf::RectangleShape box[])
@@ -652,18 +695,27 @@ void PrepareText(sf::Text &text, sf::Font &font, sf::Color color, int size, sf::
 void GetQuestion(sf::Text &question, sf::Text answers[4])
 {
 	char temp[300];
-	recv_from(client_sd, temp);
-	char *token;
-	token = strtok(temp, "\n");
-	question.setString(token);
-	token = strtok(NULL, "\n");
-	answers[0].setString(token);
-	token = strtok(NULL, "\n");
-	answers[1].setString(token);
-	token = strtok(NULL, "\n");
-	answers[2].setString(token);
-	token = strtok(NULL, "\n");
-	answers[3].setString(token);
+	if (!recv_from(client_sd, temp))
+	{
+		DisplayMessage("Connection failed !", 2);
+		shutdown(client_sd, SHUT_RDWR);
+		close(client_sd);
+		game_state = STATE::LOGIN;
+	}
+	else
+	{
+		char *token;
+		token = strtok(temp, "\n");
+		question.setString(token);
+		token = strtok(NULL, "\n");
+		answers[0].setString(token);
+		token = strtok(NULL, "\n");
+		answers[1].setString(token);
+		token = strtok(NULL, "\n");
+		answers[2].setString(token);
+		token = strtok(NULL, "\n");
+		answers[3].setString(token);
+	}
 }
 
 void DisplayMessage(string message, float seconds, bool effect)
