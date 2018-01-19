@@ -1,7 +1,7 @@
 #include "Definitions.h"
 #include "Quizz.h"
 #include <vector>
-#define WAITING_TIME 5
+#define WAITING_TIME 60
 mutex locker;
 extern int errno;
 
@@ -127,7 +127,7 @@ void PomoQuizzMatch(Quizz quizz)
 		execute.detach();
 	}
 	while (quizz.players_done != quizz.players.size())
-		;
+		sleep(1);
 	printf("Match has ended !\n");
 }
 
@@ -155,7 +155,6 @@ void PlayPomoQuizz(Quizz &quizz, vector<Player>::iterator player)
 		{
 			printf("%s has disconnected unexpectedly\n", (char *)player->username.c_str());
 			close(player->socket_descriptor);
-			printf("\n\n");
 			locker.lock();
 			quizz.players.erase(player);
 			locker.unlock();

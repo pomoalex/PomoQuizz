@@ -5,7 +5,9 @@
 #define ALTERNATIVE_FONT "FFF_Tusj.ttf"
 #define FONT "OpenSans-Regular.ttf"
 #define LOGO "PomoQuizz"
+#define TIME_PER_ANSWER 30
 
+//GLOBAL VARIABLES
 enum class STATE
 {
 	INTRO,
@@ -15,7 +17,7 @@ enum class STATE
 	PLAYING
 };
 STATE game_state;
-mutex locker;
+mutex locker;//thread mutex locker
 sf::RenderWindow window;
 sf::Sprite background;
 sf::Font font;
@@ -23,9 +25,10 @@ sf::Texture temp_texture;
 sf::Color color = sf::Color::Red;
 int WindowWidth, WindowHeight;
 string username;
-extern int errno;
 int client_sd;
+extern int errno;
 
+//USED FUNCTIONS PROTOTYPES
 void InitWindow();
 
 void Intro();
@@ -56,10 +59,11 @@ void GetWinner(int client_sd, string &winner, bool &done, bool &success);
 
 void DisplayMessage(string message, float seconds, bool effect = false);
 
+//MAIN FUNCTION
 int main()
 {
 	InitWindow();
-	game_state = STATE::LOGIN;
+	game_state = STATE::INTRO;
 	while (window.isOpen())
 	{
 		switch (game_state)
@@ -80,6 +84,7 @@ int main()
 	}
 }
 
+//FUNCTION DEFINITIONS
 void InitWindow()
 {
 	game_state = STATE::INTRO;
@@ -423,13 +428,14 @@ void PomoQuizz()
 	int cursor_in_box = 0;
 	int score_val = 0;
 	bool answered_to_all = false;
-	sf::Text question, answers[4], aux, timer, hovered_answer, score;
+	sf::Text question, answers[4], aux, timer, hovered_answer, score , completion;
 	sf::RectangleShape box[8];
 	PrepareBoxes(box);
 	PrepareText(question, font, color, WindowHeight * 0.06, sf::Text::Bold);
 	PrepareText(aux, font, color, WindowHeight * 0.06, sf::Text::Bold);
 	PrepareText(timer, font, color, WindowHeight * 0.1, sf::Text::Bold);
-	PrepareText(score, font, color, WindowHeight * 0.07);
+	PrepareText(score, font, color, WindowHeight * 0.05);
+	PrepareText(completion, font, color, WindowHeight * 0.05);
 	PrepareText(hovered_answer, font, sf::Color::Magenta, WindowHeight * 0.05);
 	for (int index = 0; index < 4; index++)
 		PrepareText(answers[index], font, color, WindowHeight * 0.05);
@@ -464,8 +470,12 @@ void PomoQuizz()
 		}
 		if (question_nr < 10 && !answering)
 		{
+			char temp[100];
 			start = chrono::high_resolution_clock::now();
 			question_nr++;
+			sprintf(temp,"Question %d/10",question_nr);
+			completion.setString(temp);
+			CenterInBox(completion,box[6]);
 			answering = true;
 			answered = false;
 			given_answer = 0;
@@ -540,9 +550,9 @@ void PomoQuizz()
 			cursor_in_box = 0;
 		window.clear();
 		window.draw(background);
+		window.draw(completion);
 		window.draw(timer);
 		window.draw(score);
-		window.draw(box[0]);
 		window.draw(question);
 		if (double_lined)
 			window.draw(aux);
@@ -554,9 +564,6 @@ void PomoQuizz()
 				window.draw(answers[index - 1]);
 			window.draw(box[index]);
 		}
-		window.draw(box[5]);
-		window.draw(box[6]);
-		window.draw(box[7]);
 		window.display();
 	}
 	if (answered_to_all)
@@ -638,7 +645,7 @@ void PrepareBoxes(sf::RectangleShape box[])
 	box[5].setOutlineThickness(thickness);
 	box[5].setFillColor(sf::Color::Transparent);
 	box[5].setPosition((WindowWidth - box[5].getGlobalBounds().width) / 2, indent);
-	//username
+	//question number
 	box[6].setSize(sf::Vector2f(WindowWidth * 0.4 - 2 * indent, WindowHeight * 0.15 - indent));
 	box[6].setOutlineColor(sf::Color::White);
 	box[6].setOutlineThickness(thickness);

@@ -15,9 +15,9 @@
 #include <pthread.h>
 #include <thread>
 #include <mutex>
-#define PORT 4322
+#define PORT 4321
 #define SERVER_IP "127.0.0.1"
-#define TIME_PER_ANSWER 5
+
 
 using namespace std;
 
