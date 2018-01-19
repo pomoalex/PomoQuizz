@@ -126,9 +126,9 @@ void PomoQuizzMatch(Quizz quizz)
 		execute = thread(PlayPomoQuizz, ref(quizz), iterator);
 		execute.detach();
 	}
-	while (quizz.players_done * 2 != quizz.players.size())
+	while (quizz.players_done != quizz.players.size())
 		;
-	;
+	printf("Match has ended !\n");
 }
 
 void PlayPomoQuizz(Quizz &quizz, vector<Player>::iterator player)
@@ -150,11 +150,12 @@ void PlayPomoQuizz(Quizz &quizz, vector<Player>::iterator player)
 				(char *)question[4].c_str());
 		send_to(player->socket_descriptor, temp);
 		if (read_from(player->socket_descriptor, &given_answer, (int)sizeof(int)) > 0)
-			printf("%s`s answer : %d\n",(char *)player->username.c_str(), given_answer);
+			printf("%s`s answer : %d\n", (char *)player->username.c_str(), given_answer);
 		else
 		{
 			printf("%s has disconnected unexpectedly\n", (char *)player->username.c_str());
 			close(player->socket_descriptor);
+			printf("\n\n");
 			locker.lock();
 			quizz.players.erase(player);
 			locker.unlock();

@@ -422,6 +422,7 @@ void PomoQuizz()
 	bool double_lined;
 	int cursor_in_box = 0;
 	int score_val = 0;
+	bool answered_to_all = false;
 	sf::Text question, answers[4], aux, timer, hovered_answer, score;
 	sf::RectangleShape box[8];
 	PrepareBoxes(box);
@@ -503,7 +504,10 @@ void PomoQuizz()
 			}
 			answering = false;
 			if (question_nr == 10)
+			{
+				answered_to_all = true;
 				break;
+			}
 			else
 				continue;
 		}
@@ -555,20 +559,23 @@ void PomoQuizz()
 		window.draw(box[7]);
 		window.display();
 	}
-	bool done = false;
-	bool success = true;
-	string winner;
-	thread execute(GetWinner, client_sd, ref(winner), ref(done), ref(success));
-	execute.detach();
-	sf::sleep(sf::milliseconds(100));
-	while (!done)
-		DisplayMessage("Waiting for all players to finish", 0.5);
-	if (success)
+	if (answered_to_all)
 	{
-		if (winner == username)
-			winner = "You";
-		winner = winner + " won !";
-		DisplayMessage(winner, 5, true);
+		bool done = false;
+		bool success = true;
+		string winner;
+		thread execute(GetWinner, client_sd, ref(winner), ref(done), ref(success));
+		execute.detach();
+		sf::sleep(sf::milliseconds(100));
+		while (!done)
+			DisplayMessage("Waiting for all players to finish", 0.5);
+		if (success)
+		{
+			if (winner == username)
+				winner = "You";
+			winner = winner + " won !";
+			DisplayMessage(winner, 5, true);
+		}
 	}
 	game_state = STATE::LOGIN;
 }
