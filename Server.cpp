@@ -1,7 +1,7 @@
 #include "Definitions.h"
 #include "Quizz.h"
 #include <vector>
-#define WAITING_TIME 60
+#define WAITING_TIME 5
 mutex locker;
 extern int errno;
 

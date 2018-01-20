@@ -5,7 +5,7 @@
 #define ALTERNATIVE_FONT "FFF_Tusj.ttf"
 #define FONT "OpenSans-Regular.ttf"
 #define LOGO "PomoQuizz"
-#define TIME_PER_ANSWER 30
+#define TIME_PER_ANSWER 5
 
 //GLOBAL VARIABLES
 enum class STATE
@@ -17,7 +17,7 @@ enum class STATE
 	PLAYING
 };
 STATE game_state;
-mutex locker;//thread mutex locker
+mutex locker; //thread mutex locker
 sf::RenderWindow window;
 sf::Sprite background;
 sf::Font font;
@@ -428,7 +428,7 @@ void PomoQuizz()
 	int cursor_in_box = 0;
 	int score_val = 0;
 	bool answered_to_all = false;
-	sf::Text question, answers[4], aux, timer, hovered_answer, score , completion;
+	sf::Text question, answers[4], aux, timer, hovered_answer, score, completion;
 	sf::RectangleShape box[8];
 	PrepareBoxes(box);
 	PrepareText(question, font, color, WindowHeight * 0.06, sf::Text::Bold);
@@ -473,9 +473,9 @@ void PomoQuizz()
 			char temp[100];
 			start = chrono::high_resolution_clock::now();
 			question_nr++;
-			sprintf(temp,"Question %d/10",question_nr);
+			sprintf(temp, "Question %d/10", question_nr);
 			completion.setString(temp);
-			CenterInBox(completion,box[6]);
+			CenterInBox(completion, box[6]);
 			answering = true;
 			answered = false;
 			given_answer = 0;
@@ -718,16 +718,27 @@ void GetQuestion(sf::Text &question, sf::Text answers[4])
 	}
 	else
 	{
+		bool connection_failed = false;
 		char *token;
 		token = strtok(temp, "\n");
+		if (token == NULL)
+			connection_failed = true;
 		question.setString(token);
 		token = strtok(NULL, "\n");
+		if (token == NULL)
+			connection_failed = true;
 		answers[0].setString(token);
 		token = strtok(NULL, "\n");
+		if (token == NULL)
+			connection_failed = true;
 		answers[1].setString(token);
 		token = strtok(NULL, "\n");
+		if (token == NULL)
+			connection_failed = true;
 		answers[2].setString(token);
 		token = strtok(NULL, "\n");
+		if (token == NULL)
+			connection_failed = true;
 		answers[3].setString(token);
 	}
 }
